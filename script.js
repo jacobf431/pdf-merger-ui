@@ -11,8 +11,8 @@ document.getElementById('upload-form').addEventListener('submit', async function
   }
 
   const formData = new FormData();
-  formData.append('file', fileInput.files[0]);         // The ZIP file
-  formData.append('email', emailInput.value.trim());   // The user's email
+  formData.append('file', fileInput.files[0]);
+  formData.append('email', emailInput.value.trim()); // 👈 THIS is what was missing
 
   try {
     const response = await fetch('https://automatedairsy.com/webhook/upload-docs', {
