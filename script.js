@@ -11,23 +11,23 @@ document.getElementById('upload-form').addEventListener('submit', async function
   }
 
   const formData = new FormData();
-  formData.append('file', fileInput.files[0]);
-  formData.append('email', emailInput.value);
+  formData.append('file', fileInput.files[0]);         // The ZIP file
+  formData.append('email', emailInput.value.trim());   // The user's email
 
   try {
     const response = await fetch('https://automatedairsy.com/webhook/upload-docs', {
       method: 'POST',
-      body: formData,
+      body: formData
     });
 
     const result = await response.json();
     if (result.message?.includes('started')) {
-      statusDiv.textContent = 'Success! Check your email shortly.';
+      statusDiv.textContent = '✅ Success! Check your email shortly.';
     } else {
-      statusDiv.textContent = 'Something went wrong.';
+      statusDiv.textContent = '❌ Something went wrong.';
     }
   } catch (err) {
-    statusDiv.textContent = 'Upload failed. Please try again.';
+    statusDiv.textContent = '❌ Upload failed. Try again.';
     console.error(err);
   }
 });
