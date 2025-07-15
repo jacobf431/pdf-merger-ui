@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PDF Merger</title>
+</head>
+<body>
+  <h2>Upload Your ZIP File to Merge PDFs</h2>
+  <input type="file" id="zipInput" accept=".zip" />
+  <button onclick="upload()">Merge PDFs</button>
+  <p id="status"></p>
+
+  <script>
+    async function upload() {
+      const fileInput = document.getElementById("zipInput");
+      const status = document.getElementById("status");
+
+      if (!fileInput.files.length) {
+        status.textContent = "❌ Please select a ZIP file.";
+        return;
+      }
+
+      const file = fileInput.files[0];
+      status.textContent = "⏳ Uploading and merging...";
+
+      try {
+        const response = await fetch("https://automatedairsy.com/webhook/upload-docs", {
+          method: "POST",
+          body: file,
+          headers: {
+            "Content-Type": "application/zip"
+          }
+        });
+
+        if (!response.ok) throw new Error("Merge failed");
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "merged.pdf";
+        link.click();
+
+        status.textContent = "✅ Merged PDF downloaded!";
+      } catch (err) {
+        status.textContent = "❌ Error: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
