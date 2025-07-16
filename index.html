@@ -7,8 +7,8 @@
 <body>
   <h2>Upload ZIP of PDFs</h2>
 
-  <form id="upload-form" enctype="multipart/form-data">
-    <input type="file" id="file-input" name="data" accept=".zip" required />
+  <form id="upload-form">
+    <input type="file" id="file-input" accept=".zip" required />
     <button type="submit">Upload</button>
   </form>
 
@@ -24,11 +24,9 @@
       const status = document.getElementById("status");
       const resultDiv = document.getElementById("result");
 
-      // Clear previous messages
       status.innerText = "";
       resultDiv.innerHTML = "";
 
-      // Validate file type by extension
       if (!file || !/\.zip$/i.test(file.name.trim())) {
         status.innerText = "Please upload a valid .zip file.";
         return;
@@ -36,40 +34,38 @@
 
       status.innerText = "Uploading...";
 
-      const formData = new FormData();
-      formData.append("data", file);
-
       try {
-        const response = await fetch("https://automatedairsy.com/webhook/upload-docs", {
+        const res = await fetch("https://automatedairsy.com/webhook/upload-docs", {
           method: "POST",
-          body: formData
+          headers: {
+            "Content-Type": "application/zip"
+          },
+          body: file
         });
 
-        const resText = await response.text();
+        const resText = await res.text();
 
-        if (!response.ok) {
+        if (!res.ok) {
           status.innerText = "Upload failed.";
           resultDiv.innerText = resText;
           return;
         }
 
-        // Try parsing response as JSON (contains the URL)
         let result;
         try {
           result = JSON.parse(resText);
-        } catch (err) {
-          status.innerText = "Upload succeeded, but response was invalid.";
+        } catch {
+          status.innerText = "Upload succeeded, but could not parse response.";
           resultDiv.innerText = resText;
           return;
         }
 
-        // Display link if available
         if (result?.data?.url) {
           status.innerText = "Success!";
           resultDiv.innerHTML = `<p><a href="${result.data.url}" target="_blank">Download your merged PDF</a></p>`;
         } else {
-          status.innerText = "Upload succeeded, but no link was returned.";
-          resultDiv.innerText = resText;
+          status.innerText = "Upload completed but no download link returned.";
+          resultDiv.innerText = JSON.stringify(result, null, 2);
         }
       } catch (err) {
         status.innerText = "Upload failed.";
