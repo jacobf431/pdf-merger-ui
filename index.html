@@ -1,71 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>PDF Merger Upload</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 2em auto;
+    }
+    input, button {
+      display: block;
+      width: 100%;
+      padding: 0.6em;
+      margin-top: 1em;
+    }
+    #status {
+      margin-top: 1em;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-  <h2>Upload ZIP of PDFs</h2>
-
-  <input type="file" id="file-input" accept=".zip" required />
-  <button id="upload-btn">Upload</button>
-
-  <p id="status"></p>
-  <div id="result"></div>
+  <h1>Upload ZIP of PDFs</h1>
+  <form id="upload-form">
+    <input type="file" id="zip-file" accept=".zip" required />
+    <input type="email" id="email" placeholder="Enter your email" required />
+    <button type="submit">Upload & Merge</button>
+  </form>
+  <div id="status"></div>
 
   <script>
-    document.getElementById("upload-btn").addEventListener("click", async function () {
-      const fileInput = document.getElementById("file-input");
+    const form = document.getElementById('upload-form');
+    const statusDiv = document.getElementById('status');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusDiv.textContent = '';
+
+      const fileInput = document.getElementById('zip-file');
+      const emailInput = document.getElementById('email');
       const file = fileInput.files[0];
-      const status = document.getElementById("status");
-      const resultDiv = document.getElementById("result");
+      const email = emailInput.value.trim();
 
-      status.innerText = "";
-      resultDiv.innerHTML = "";
-
-      if (!file || !/\.zip$/i.test(file.name.trim())) {
-        status.innerText = "Please upload a valid .zip file.";
+      if (!file || !email) {
+        statusDiv.textContent = '❌ Please select a ZIP file and enter your email.';
         return;
       }
 
-      status.innerText = "Uploading...";
-
       try {
-        const res = await fetch("https://automatedairsy.com/webhook/upload-docs", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/zip"
-          },
-          body: file
+        statusDiv.textContent = '⏳ Requesting upload URL...';
+        const res = await fetch('http://localhost:5678/webhook/get-upload-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: file.name })
         });
 
-        const resText = await res.text();
+        const { uploadUrl, fileKey } = await res.json();
+        if (!uploadUrl || !fileKey) throw new Error("Invalid response from get-upload-url.");
 
-        if (!res.ok) {
-          status.innerText = "Upload failed.";
-          resultDiv.innerText = resText;
-          return;
-        }
+        statusDiv.textContent = '⏳ Uploading file to R2...';
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/zip' },
+          body: file
+        });
+        if (!uploadRes.ok) throw new Error("Upload to R2 failed.");
 
-        let result;
-        try {
-          result = JSON.parse(resText);
-        } catch {
-          status.innerText = "Upload succeeded, but could not parse response.";
-          resultDiv.innerText = resText;
-          return;
-        }
+        statusDiv.textContent = '⏳ Notifying server to process your file...';
+        const notifyRes = await fetch('http://localhost:5678/webhook/upload-docs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileKey, email })
+        });
 
-        if (result?.data?.url) {
-          status.innerText = "Success!";
-          resultDiv.innerHTML = `<p><a href="${result.data.url}" target="_blank">Download your merged PDF</a></p>`;
-        } else {
-          status.innerText = "Upload completed but no download link returned.";
-          resultDiv.innerText = JSON.stringify(result, null, 2);
-        }
+        if (!notifyRes.ok) throw new Error("Failed to notify n8n backend.");
+
+        const notifyJson = await notifyRes.json();
+        statusDiv.innerHTML = '✅ File uploaded and is being processed.<br>Check your email shortly.';
+        console.log('Response:', notifyJson);
+
       } catch (err) {
-        status.innerText = "Upload failed.";
-        resultDiv.innerText = err.message;
+        console.error(err);
+        statusDiv.textContent = `❌ Error: ${err.message}`;
       }
     });
   </script>
