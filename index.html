@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>PDF Merge Upload</title>
+  <title>PDF Merger Upload</title>
 </head>
 <body>
-  <h2>Upload ZIP to Merge PDFs</h2>
+  <h2>Upload ZIP of PDFs</h2>
 
   <form id="upload-form" enctype="multipart/form-data">
     <input type="file" id="file-input" name="data" accept=".zip" required />
@@ -13,7 +13,7 @@
   </form>
 
   <p id="status"></p>
-  <div id="link"></div>
+  <div id="result"></div>
 
   <script>
     document.getElementById("upload-form").addEventListener("submit", async function (e) {
@@ -22,36 +22,52 @@
       const fileInput = document.getElementById("file-input");
       const file = fileInput.files[0];
       const status = document.getElementById("status");
-      const linkDiv = document.getElementById("link");
+      const resultDiv = document.getElementById("result");
 
-      if (!file || !file.name.endsWith(".zip")) {
-        status.innerText = "Please upload a .zip file.";
+      // Clear previous messages
+      status.innerText = "";
+      resultDiv.innerHTML = "";
+
+      // Robust file validation
+      if (!file || !/\.zip$/i.test(file.name.trim())) {
+        status.innerText = "Please upload a valid .zip file.";
         return;
       }
 
       status.innerText = "Uploading...";
 
       const formData = new FormData();
-      formData.append("data", file);
+      formData.append("data", file); // must match n8n binary key
 
       try {
-        const res = await fetch("https://automatedairsy.com/webhook/pdf-merge", {
+        const response = await fetch("https://automatedairsy.com/webhook/pdf-merge", {
           method: "POST",
           body: formData
         });
 
-        const resText = await res.text();
-        status.innerText = "Upload complete.";
+        const resText = await response.text();
 
-        try {
-          const result = JSON.parse(resText);
-          linkDiv.innerHTML = `<a href="${result.data.url}" target="_blank">Download your merged PDF</a>`;
-        } catch {
-          linkDiv.innerText = resText;
+        if (!response.ok) {
+          status.innerText = "Upload failed.";
+          resultDiv.innerText = resText;
+          return;
         }
+
+        // Try parsing response as JSON (contains the URL)
+        let result;
+        try {
+          result = JSON.parse(resText);
+        } catch (err) {
+          status.innerText = "Upload succeeded, but response was invalid.";
+          resultDiv.innerText = resText;
+          return;
+        }
+
+        status.innerText = "Success!";
+        resultDiv.innerHTML = `<p><a href="${result.data.url}" target="_blank">Download your merged PDF</a></p>`;
       } catch (err) {
         status.innerText = "Upload failed.";
-        linkDiv.innerText = err.message;
+        resultDiv.innerText = err.message;
       }
     });
   </script>
