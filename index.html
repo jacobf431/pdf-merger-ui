@@ -2,28 +2,62 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Merge PDFs and Send to Email</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Upload PDF & Email</title>
 </head>
 <body>
   <h2>Merge PDFs and Send to Email</h2>
-
   <form id="uploadForm" enctype="multipart/form-data">
     <label for="email">Your Email:</label><br>
     <input type="email" id="email" name="email" required><br><br>
 
     <label for="file">Choose PDF or ZIP of PDFs:</label><br>
-    <input type="file" id="file" name="file" accept=".pdf,.zip" required><br>
-    <small id="fileInfo"></small><br><br>
+    <input type="file" id="file" name="file" accept=".pdf,.zip" required><br><br>
 
-    <div id="progressBar"><div id="progressBarFill">0%</div></div><br>
+    <progress id="progressBar" value="0" max="100" style="width:300px;"></progress><br><br>
 
     <button type="submit">Submit</button>
   </form>
 
   <p id="status"></p>
-  <a id="downloadLink" style="display:none;" target="_blank">Download Merged PDF</a>
 
-  <script src="script.js"></script>
-</body>
-</html>
+  <script>
+    document.getElementById('uploadForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const file = document.getElementById('file').files[0];
+      const status = document.getElementById('status');
+      const progressBar = document.getElementById('progressBar');
+
+      if (!email || !file) {
+        status.innerText = "❌ Please provide both an email and a file.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('email', email);
+      formData.append('data', file); // ✅ This is critical — must match n8n webhook "data"
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://automatedairsy.com/webhook/upload-docs', true);
+
+      xhr.upload.onprogress = function (e) {
+        if (e.lengthComputable) {
+          const percent = (e.loaded / e.total) * 100;
+          progressBar.value = percent;
+        }
+      };
+
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          status.innerText = "✅ Upload successful. Check your email.";
+        } else {
+          status.innerText = "❌ Upload failed: " + xhr.responseText;
+        }
+      };
+
+      xhr.onerror = function () {
+        status.innerText = "❌ Network error.";
+      };
+
+      xhr.send(formData);
