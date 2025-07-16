@@ -2,22 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>PDF Merge Upload</title>
+  <title>Test Upload</title>
 </head>
 <body>
-  <h2>Merge PDFs and Send to Email</h2>
-  <form id="uploadForm" enctype="multipart/form-data">
+  <h2>Upload Zip + Email</h2>
+  <form
+    action="https://automatedairsy.com/webhook/upload-docs"
+    method="POST"
+    enctype="multipart/form-data"
+  >
     <label>Email:</label><br />
     <input type="email" name="email" required /><br /><br />
 
     <label>Upload ZIP or PDF:</label><br />
     <input type="file" name="data" accept=".zip,.pdf" required /><br /><br />
 
-    <button type="submit">Upload</button>
+    <button type="submit">Send</button>
   </form>
-
-  <p id="status"></p>
-
-  <script src="script.js"></script>
 </body>
 </html>
