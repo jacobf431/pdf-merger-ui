@@ -2,22 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Upload Zip</title>
+  <title>Merge PDFs</title>
 </head>
 <body>
-  <h2>Upload ZIP File with Email</h2>
-  <form
-    method="POST"
-    action="https://automatedairsy.com/webhook/upload-docs"
-    enctype="multipart/form-data"
-  >
-    <label>Email:</label><br />
-    <input type="email" name="email" required /><br /><br />
-
-    <label>Upload ZIP File:</label><br />
-    <input type="file" name="data" accept=".zip" required /><br /><br />
-
-    <button type="submit">Upload</button>
+  <h1>Upload a ZIP of PDFs</h1>
+  <form id="upload-form" enctype="multipart/form-data">
+    <input type="file" id="file-input" name="data" accept=".zip" required />
+    <button type="submit">Upload ZIP</button>
+    <div id="progress"></div>
+    <div id="result"></div>
   </form>
+
+  <script>
+    document.getElementById("upload-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const fileInput = document.getElementById("file-input");
+      const file = fileInput.files[0];
+      if (!file || file.type !== "application/zip") {
+        alert("Please upload a ZIP file.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("data", file);
+
+      document.getElementById("progress").innerText = "Uploading...";
+
+      try {
+        const res = await fetch("https://automatedairsy.com/webhook/pdf-merge", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!res.ok) throw new Error("Upload failed.");
+
+        const result = await res.json();
+        document.getElementById("progress").innerText = "Success!";
+        document.getElementById("result").innerHTML = `
+          <p><strong>Download:</strong> <a href="${result.data.url}" target="_blank">Your merged PDF</a></p>
+        `;
+      } catch (err) {
+        document.getElementById("progress").innerText = "Error!";
+        document.getElementById("result").innerText = err.message;
+      }
+    });
+  </script>
 </body>
 </html>
