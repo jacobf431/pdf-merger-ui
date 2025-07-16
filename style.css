@@ -1,0 +1,29 @@
+body {
+  font-family: Arial, sans-serif;
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+#progressBar {
+  width: 100%;
+  background-color: #ddd;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
+#progressBarFill {
+  width: 0%;
+  height: 20px;
+  background-color: #4CAF50;
+  text-align: center;
+  color: white;
+  border-radius: 5px;
+}
+
+#downloadLink {
+  margin-top: 15px;
+  display: inline-block;
+}
