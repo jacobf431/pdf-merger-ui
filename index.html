@@ -11,9 +11,7 @@
     <input type="email" id="email" name="email" required><br><br>
 
     <label for="file">Choose PDF or ZIP of PDFs:</label><br>
-    <input type="file" id="file" name="file" accept=".pdf,.zip" required><br><br>
-
-    <progress id="progressBar" value="0" max="100" style="width:300px;"></progress><br><br>
+    <input type="file" id="file" name="data" accept=".pdf,.zip" required><br><br>
 
     <button type="submit">Submit</button>
   </form>
@@ -21,43 +19,38 @@
   <p id="status"></p>
 
   <script>
-    document.getElementById('uploadForm').addEventListener('submit', function (e) {
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
       e.preventDefault();
 
-      const email = document.getElementById('email').value;
-      const file = document.getElementById('file').files[0];
       const status = document.getElementById('status');
-      const progressBar = document.getElementById('progressBar');
+      const email = document.getElementById('email').value.trim();
+      const file = document.getElementById('file').files[0];
 
       if (!email || !file) {
-        status.innerText = "❌ Please provide both an email and a file.";
+        status.innerText = "❌ Email and file required.";
         return;
       }
 
       const formData = new FormData();
-      formData.append('email', email);
-      formData.append('data', file); // ✅ This is critical — must match n8n webhook "data"
+      formData.append('email', email);     // ✅ JSON field
+      formData.append('data', file);       // ✅ Binary key must match "data"
 
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', 'https://automatedairsy.com/webhook/upload-docs', true);
+      try {
+        const res = await fetch('https://automatedairsy.com/webhook/upload-docs', {
+          method: 'POST',
+          body: formData
+        });
 
-      xhr.upload.onprogress = function (e) {
-        if (e.lengthComputable) {
-          const percent = (e.loaded / e.total) * 100;
-          progressBar.value = percent;
-        }
-      };
-
-      xhr.onload = function () {
-        if (xhr.status === 200) {
-          status.innerText = "✅ Upload successful. Check your email.";
+        if (res.ok) {
+          status.innerText = "✅ File uploaded and email sent.";
         } else {
-          status.innerText = "❌ Upload failed: " + xhr.responseText;
+          const err = await res.text();
+          status.innerText = "❌ Server error: " + err;
         }
-      };
-
-      xhr.onerror = function () {
-        status.innerText = "❌ Network error.";
-      };
-
-      xhr.send(formData);
+      } catch (err) {
+        status.innerText = "❌ Failed to upload: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
