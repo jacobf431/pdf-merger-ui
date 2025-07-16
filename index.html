@@ -1,19 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Upload Zip and Email</title>
-</head>
-<body>
-  <h2>Upload Form</h2>
-  <form id="upload-form" enctype="multipart/form-data" method="POST" action="https://automatedairsy.com/webhook/upload-docs">
-    <label>Email:</label><br />
-    <input type="email" name="email" required /><br /><br />
+const req = $input.all()[0];
 
-    <label>Select ZIP or PDF:</label><br />
-    <input type="file" name="data" accept=".zip,.pdf" required /><br /><br />
+// Get email from body (FormData field)
+const email = req.body?.email || req.json?.email;
+if (!email) throw new Error("❌ Missing email");
 
-    <button type="submit">Submit</button>
-  </form>
-</body>
-</html>
+// Get binary file
+const binary = req.binary?.data;
+if (!binary?.data) throw new Error("❌ Missing binary file");
+
+return [
+  {
+    json: { email },
+    binary: { data: binary }
+  }
+];
