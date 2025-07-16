@@ -2,20 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Upload ZIP + Email</title>
+  <title>Upload Zip</title>
 </head>
 <body>
-  <h2>Upload ZIP + Email</h2>
+  <h2>Upload ZIP File with Email</h2>
   <form
-    enctype="multipart/form-data"
     method="POST"
     action="https://automatedairsy.com/webhook/upload-docs"
+    enctype="multipart/form-data"
   >
-    <label for="email">Email:</label><br />
-    <input type="email" name="email" id="email" required /><br /><br />
+    <label>Email:</label><br />
+    <input type="email" name="email" required /><br /><br />
 
-    <label for="zip-file">Upload ZIP:</label><br />
-    <input type="file" name="data" id="zip-file" accept=".zip" required /><br /><br />
+    <label>Upload ZIP File:</label><br />
+    <input type="file" name="data" accept=".zip" required /><br /><br />
 
     <button type="submit">Upload</button>
   </form>
