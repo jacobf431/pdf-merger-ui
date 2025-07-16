@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Upload PDF & Email</title>
+  <title>Upload ZIP + Email</title>
 </head>
 <body>
-  <h2>Merge PDFs and Send to Email</h2>
-  <form id="uploadForm" enctype="multipart/form-data">
-    <label for="email">Your Email:</label><br>
-    <input type="email" id="email" name="email" required><br><br>
+  <h2>Upload ZIP & Send Email</h2>
+  <form id="uploadForm">
+    <label>Email:</label><br>
+    <input type="email" name="email" required><br><br>
 
-    <label for="file">Choose PDF or ZIP of PDFs:</label><br>
-    <input type="file" id="file" name="data" accept=".pdf,.zip" required><br><br>
+    <label>Upload ZIP:</label><br>
+    <input type="file" name="data" accept=".zip,.pdf" required><br><br>
 
     <button type="submit">Submit</button>
   </form>
@@ -19,36 +19,28 @@
   <p id="status"></p>
 
   <script>
-    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const status = document.getElementById('status');
-      const email = document.getElementById('email').value.trim();
-      const file = document.getElementById('file').files[0];
+      const form = e.target;
+      const formData = new FormData(form);
 
-      if (!email || !file) {
-        status.innerText = "❌ Email and file required.";
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('email', email);     // ✅ JSON field
-      formData.append('data', file);       // ✅ Binary key must match "data"
+      document.getElementById('status').innerText = "⏳ Uploading...";
 
       try {
-        const res = await fetch('https://automatedairsy.com/webhook/upload-docs', {
-          method: 'POST',
+        const res = await fetch("https://automatedairsy.com/webhook/upload-docs", {
+          method: "POST",
           body: formData
         });
 
         if (res.ok) {
-          status.innerText = "✅ File uploaded and email sent.";
+          document.getElementById('status').innerText = "✅ Uploaded successfully.";
         } else {
-          const err = await res.text();
-          status.innerText = "❌ Server error: " + err;
+          const error = await res.text();
+          document.getElementById('status').innerText = "❌ Error: " + error;
         }
       } catch (err) {
-        status.innerText = "❌ Failed to upload: " + err.message;
+        document.getElementById('status').innerText = "❌ Failed: " + err.message;
       }
     });
   </script>
