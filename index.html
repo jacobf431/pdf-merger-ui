@@ -1,55 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Upload ZIP and Email</title>
+  <meta charset="UTF-8" />
+  <title>PDF Merge Upload</title>
 </head>
 <body>
-  <h2>Send ZIP to n8n</h2>
-
+  <h2>Merge PDFs and Send to Email</h2>
   <form id="uploadForm" enctype="multipart/form-data">
-    <label>Email:</label><br>
-    <input type="email" id="email" name="email" required><br><br>
+    <label>Email:</label><br />
+    <input type="email" name="email" required /><br /><br />
 
-    <label>ZIP File:</label><br>
-    <input type="file" id="zipFile" name="data" accept=".zip" required><br><br>
+    <label>Upload ZIP or PDF:</label><br />
+    <input type="file" name="data" accept=".zip,.pdf" required /><br /><br />
 
     <button type="submit">Upload</button>
   </form>
 
   <p id="status"></p>
 
-  <script>
-    document.getElementById('uploadForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
-
-      const email = document.getElementById('email').value;
-      const zipFile = document.getElementById('zipFile').files[0];
-      const status = document.getElementById('status');
-
-      if (!email || !zipFile) {
-        status.textContent = '❌ Please enter your email and select a file.';
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('email', email);
-      formData.append('data', zipFile);  // 👈 MUST match Webhook's binary property name
-
-      try {
-        const res = await fetch('https://automatedairsy.com/webhook/upload-docs', {
-          method: 'POST',
-          body: formData
-        });
-
-        const text = await res.text();
-        status.textContent = res.ok
-          ? '✅ File sent successfully. Check your email.'
-          : `❌ Error: ${text}`;
-      } catch (err) {
-        status.textContent = `❌ Request failed: ${err.message}`;
-      }
-    });
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
