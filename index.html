@@ -40,7 +40,7 @@
       formData.append("data", file); // must match n8n binary key
 
       try {
-        const response = await fetch("https://automatedairsy.com/webhook/pdf-merge", {
+        const response = await fetch("https://automatedairsy.com/webhook/upload-docs", {
           method: "POST",
           body: formData
         });
