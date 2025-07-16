@@ -7,18 +7,14 @@
 <body>
   <h2>Upload ZIP of PDFs</h2>
 
-  <form id="upload-form">
-    <input type="file" id="file-input" accept=".zip" required />
-    <button type="submit">Upload</button>
-  </form>
+  <input type="file" id="file-input" accept=".zip" required />
+  <button id="upload-btn">Upload</button>
 
   <p id="status"></p>
   <div id="result"></div>
 
   <script>
-    document.getElementById("upload-form").addEventListener("submit", async function (e) {
-      e.preventDefault();
-
+    document.getElementById("upload-btn").addEventListener("click", async function () {
       const fileInput = document.getElementById("file-input");
       const file = fileInput.files[0];
       const status = document.getElementById("status");
