@@ -40,7 +40,6 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
   downloadLink.style.display = 'none';
 
   try {
-    // Simulate progress bar
     let percent = 0;
     const fakeProgress = setInterval(() => {
       if (percent < 90) {
