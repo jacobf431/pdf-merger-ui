@@ -2,89 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PDF Merger Upload</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      max-width: 600px;
-      margin: 2em auto;
-    }
-    input, button {
-      display: block;
-      width: 100%;
-      padding: 0.6em;
-      margin-top: 1em;
-    }
-    #status {
-      margin-top: 1em;
-      font-weight: bold;
-    }
-  </style>
+  <title>Upload ZIP to R2</title>
 </head>
 <body>
-  <h1>Upload ZIP of PDFs</h1>
-  <form id="upload-form">
-    <input type="file" id="zip-file" accept=".zip" required />
-    <input type="email" id="email" placeholder="Enter your email" required />
-    <button type="submit">Upload & Merge</button>
-  </form>
-  <div id="status"></div>
+  <h1>Upload Your ZIP File</h1>
+  <input type="file" id="fileInput" accept=".zip" />
+  <button onclick="uploadFile()">Upload</button>
+  <p id="status"></p>
 
   <script>
-    const form = document.getElementById('upload-form');
-    const statusDiv = document.getElementById('status');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      statusDiv.textContent = '';
-
-      const fileInput = document.getElementById('zip-file');
-      const emailInput = document.getElementById('email');
+    async function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
       const file = fileInput.files[0];
-      const email = emailInput.value.trim();
+      if (!file) return alert('Select a ZIP file first');
 
-      if (!file || !email) {
-        statusDiv.textContent = '❌ Please select a ZIP file and enter your email.';
-        return;
-      }
+      const encodedFileName = encodeURIComponent(file.name);
+      const uploadUrl = `https://<YOUR_R2_ACCOUNT_ID>.r2.dev/automatedairsy/${encodedFileName}`;
+
+      document.getElementById('status').innerText = "Uploading...";
 
       try {
-        statusDiv.textContent = '⏳ Requesting upload URL...';
-        const res = await fetch('http://localhost:5678/webhook/get-upload-url', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const res = await fetch(uploadUrl, {
+          method: "PUT",
+          body: file,
+          headers: {
+            "Content-Type": "application/zip"
+          }
+        });
+
+        if (!res.ok) throw new Error("Upload failed: " + res.statusText);
+
+        document.getElementById('status').innerText = "Upload successful! Processing...";
+
+        // Trigger n8n webhook after upload
+        await fetch("https://automatedairsy.com/webhook/pdf-merge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filename: file.name })
         });
 
-        const { uploadUrl, fileKey } = await res.json();
-        if (!uploadUrl || !fileKey) throw new Error("Invalid response from get-upload-url.");
-
-        statusDiv.textContent = '⏳ Uploading file to R2...';
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/zip' },
-          body: file
-        });
-        if (!uploadRes.ok) throw new Error("Upload to R2 failed.");
-
-        statusDiv.textContent = '⏳ Notifying server to process your file...';
-        const notifyRes = await fetch('http://localhost:5678/webhook/upload-docs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileKey, email })
-        });
-
-        if (!notifyRes.ok) throw new Error("Failed to notify n8n backend.");
-
-        const notifyJson = await notifyRes.json();
-        statusDiv.innerHTML = '✅ File uploaded and is being processed.<br>Check your email shortly.';
-        console.log('Response:', notifyJson);
-
+        document.getElementById('status').innerText = "File sent to processing!";
       } catch (err) {
         console.error(err);
-        statusDiv.textContent = `❌ Error: ${err.message}`;
+        document.getElementById('status').innerText = "Error: " + err.message;
       }
-    });
+    }
   </script>
 </body>
 </html>
