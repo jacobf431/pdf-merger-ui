@@ -1,48 +1,71 @@
-<form id="uploadForm">
-  <input type="file" id="fileInput" required />
-  <input type="email" id="emailInput" placeholder="Your email" required />
-  <button type="submit">Upload File</button>
-</form>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>File Upload</title>
+</head>
+<body>
+  <form id="uploadForm">
+    <input type="file" id="fileInput" required />
+    <input type="email" id="emailInput" placeholder="Your email" required />
+    <button type="submit">Upload File</button>
+  </form>
 
-<p id="status"></p>
+  <p id="status"></p>
 
-<script>
-document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+  <script>
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-  const file = document.getElementById('fileInput').files[0];
-  const email = document.getElementById('emailInput').value;
-  if (!file || !email) return;
+      const file = document.getElementById('fileInput').files[0];
+      const email = document.getElementById('emailInput').value;
+      const status = document.getElementById('status');
 
-  document.getElementById('status').innerText = 'Requesting upload URL...';
+      if (!file || !email) {
+        status.innerText = "Missing file or email.";
+        return;
+      }
 
-  // Step 1: Get presigned URL from your Flask signer
-  const signerRes = await fetch('https://upload.automatedairsy.com/get-upload-url', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ filename: file.name })
-  });
+      try {
+        status.innerText = "Requesting upload URL...";
 
-  const { uploadURL, key } = await signerRes.json();
+        // ✅ Step 1: Get presigned URL
+        const signerRes = await fetch('https://upload.automatedairsy.com/get-upload-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: file.name })
+        });
 
-  // Step 2: Upload file directly to Cloudflare R2
-  document.getElementById('status').innerText = 'Uploading file...';
-  await fetch(uploadURL, {
-    method: 'PUT',
-    body: file
-  });
+        if (!signerRes.ok) throw new Error("Failed to get presigned URL");
+        const { uploadURL, key } = await signerRes.json();
 
-  // Step 3: Send file path + email to n8n webhook
-  document.getElementById('status').innerText = 'Notifying server...';
-  await fetch('https://automatedairsy.com/webhook/upload-docs', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      filePath: key,
-      email: email
-    })
-  });
+        // ✅ Step 2: Upload file to Cloudflare R2
+        status.innerText = "Uploading to Cloudflare R2...";
+        const uploadRes = await fetch(uploadURL, {
+          method: 'PUT',
+          body: file
+        });
 
-  document.getElementById('status').innerText = 'Upload complete. You’ll receive your result via email.';
-});
-</script>
+        if (!uploadRes.ok) throw new Error("Upload to R2 failed");
+
+        // ✅ Step 3: Notify n8n webhook
+        status.innerText = "Notifying automation system...";
+        const webhookRes = await fetch('https://automatedairsy.com/webhook/upload-docs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filePath: key,
+            email: email
+          })
+        });
+
+        if (!webhookRes.ok) throw new Error("Webhook notification failed");
+
+        status.innerText = "✅ Upload complete! You’ll receive your result via email.";
+      } catch (err) {
+        console.error(err);
+        status.innerText = "❌ Error: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
