@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>File Upload</title>
+</head>
+<body>
+  <h2>Upload File to Cloudflare R2</h2>
+  <input type="file" id="fileInput" />
+  <button id="uploadBtn">Upload</button>
+  <p id="status"></p>
+
+  <script>
+    document.getElementById('uploadBtn').onclick = async () => {
+      const fileInput = document.getElementById('fileInput');
+      const status = document.getElementById('status');
+      if (!fileInput.files.length) {
+        status.textContent = 'Please select a file first.';
+        return;
+      }
+      const file = fileInput.files[0];
+      status.textContent = 'Requesting upload URL...';
+
+      try {
+        // Get presigned URL
+        const presignRes = await fetch('https://upload.automatedairsy.com/get-presigned-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: file.name, contentType: file.type })
+        });
+        if (!presignRes.ok) throw new Error('Failed to get upload URL');
+        const { uploadUrl, fileUrl } = await presignRes.json();
+
+        status.textContent = 'Uploading file...';
+
+        // Upload file to R2
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type },
+          body: file
+        });
+        if (!uploadRes.ok) throw new Error('Upload failed');
+
+        status.textContent = `Upload successful! File URL: ${fileUrl}`;
+      } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+      }
+    };
+  </script>
+</body>
+</html>
